@@ -16,12 +16,12 @@ unless (-e $file_path) {
 }
 
 
-my $db_driver = 'mysql';
-my $host = 'xoma-pc';
-$dbh = DBI->connect('DBI:mysql:database=ru_center;host=localhost', 'root', '', {
-    RaiseError => 1,
-    AutoCommit => 1
-});
+my $dbh = connect_db();
+
+=test
+my $tables = $dbh->selectall_arrayref('SHOW tables');
+say Dumper($tables);
+=cut
 
 
 if (open my $fh => $file_path) {
@@ -34,6 +34,7 @@ if (open my $fh => $file_path) {
 else {
     say "Cannot open file [$file_path]: $!";
 }
+
 
 $dbh->disconnect();
 
@@ -61,7 +62,7 @@ sub process_string {
             address => $address
         };
     }
-    say Dumper($item);
+    #say Dumper($item);
 }
 
 
