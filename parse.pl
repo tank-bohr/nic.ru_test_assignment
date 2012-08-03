@@ -17,18 +17,20 @@ unless (-e $file_path) {
 }
 
 
-my $dbh = connect_db();
-
-=test
-my $tables = $dbh->selectall_arrayref('SHOW tables');
-say Dumper($tables);
-=cut
 
 
+
+my (@message, @log);
 if (open my $fh => $file_path) {
     while (my $string = <$fh>) {
         chomp $string;
-        process_string($string);
+        my ($table_name, $item) = process_string($string);
+        if ($table_name eq 'message') {
+            push @message, $item;
+        }
+        elsif ($table_name eq 'log') {
+            push @log, $item;
+        }
     }
     close $fh;
 }
@@ -37,7 +39,30 @@ else {
 }
 
 
-$dbh->disconnect();
+#my $dbh = connect_db();
+#$dbh->disconnect();
+
+
+sub batch_insert {
+    my ($dbh, $params) = @_;
+    my ($table_name, $fields, $data) = @{ $params }{ qw/table_name fields data/ };
+
+    #my @fields = qw/created id int_id str/;
+    my $fields_list  = join ', ' => @$fields;
+    my $placeholder  = join ', ' => map {'?'}              0..$#$fields;
+    my $placeholders = join ', ' => map {"($placeholder)"} 0..$#$data;
+
+    my $query = qq!INSERT INTO $table_name ($fields_list) VALUES $placeholders!;
+
+    my @bind_values;
+    foreach my $item (@$data) {
+        push @bind_values, @{ $item }{ @fields };
+    }
+
+    #$dbh->do($query, undef, @bind_values);
+}
+
+
 
 
 
@@ -47,11 +72,10 @@ sub process_string {
     my ($int_id, $flag, $address, $other) = split ' ', $string_without_timestamp, 4;
 
     $flag = '' if $flag !~ qr/(?:<=|=>|->|\*\*|==)/;
-
     if ($flag eq '<=') {
         my ($id) = $other =~ qr/\sid=(.+)/;
         $id ||= time();
-        insert_table('message', {
+        return ('message', {
             created => "$date $time",
             id => $id,
             int_id => $int_id,
@@ -59,7 +83,7 @@ sub process_string {
         });
     }
     else {
-         insert_table('log', {
+         return ('log', {
             created => "$date $time",
             int_id => $int_id,
             str => $string_without_timestamp,
@@ -71,7 +95,7 @@ sub process_string {
 
 
 
-sub insert_table {
+sub insert_one {
     my ($table_name, $item) = @_;
 
     my @fields = grep {defined $item->{$_}} keys %$item;
@@ -82,7 +106,7 @@ sub insert_table {
     my $query = qq!INSERT INTO $table_name ($fields_list) VALUES ($placeholders)!;
     my @bind_values = map {$item->{$_}} @fields;
 
-    $dbh->do($query, undef, @bind_values);
+    #$dbh->do($query, undef, @bind_values);
 }
 
 
