@@ -17,20 +17,15 @@ unless (-e $file_path) {
 }
 
 
-
-
-
-my (@message, @log);
+my %pasrsed = (
+    message => [],
+    log     => []
+);
 if (open my $fh => $file_path) {
     while (my $string = <$fh>) {
         chomp $string;
         my ($table_name, $item) = process_string($string);
-        if ($table_name eq 'message') {
-            push @message, $item;
-        }
-        elsif ($table_name eq 'log') {
-            push @log, $item;
-        }
+        push @{ $pasrsed{$table_name} }, $item;
     }
     close $fh;
 }
@@ -39,15 +34,22 @@ else {
 }
 
 
-#my $dbh = connect_db();
-#$dbh->disconnect();
+my $dbh = connect_db();
+foreach my $table_name (keys %pasrsed) {
+    #batch_insert($dbh, $table_name, $pasrsed{$table_name});
+    foreach my $item (@{ $pasrsed{$table_name} }) {
+        insert_one($dbh, $table_name, $item);
+    }
+}
+$dbh->disconnect();
 
 
 sub batch_insert {
-    my ($dbh, $params) = @_;
-    my ($table_name, $fields, $data) = @{ $params }{ qw/table_name fields data/ };
+    my ($dbh, $table_name, $data) = @_;
 
-    #my @fields = qw/created id int_id str/;
+    my $fields = $dbh->selectcol_arrayref(qq!SHOW COLUMNS FROM $table_name!);
+    say Dumper($fields);
+
     my $fields_list  = join ', ' => @$fields;
     my $placeholder  = join ', ' => map {'?'}              0..$#$fields;
     my $placeholders = join ', ' => map {"($placeholder)"} 0..$#$data;
@@ -56,13 +58,12 @@ sub batch_insert {
 
     my @bind_values;
     foreach my $item (@$data) {
-        push @bind_values, @{ $item }{ @fields };
+        push @bind_values, @{ $item }{ @$fields };
     }
 
-    #$dbh->do($query, undef, @bind_values);
+    say $query;
+    $dbh->do($query, undef, @bind_values);
 }
-
-
 
 
 
@@ -95,8 +96,9 @@ sub process_string {
 
 
 
+
 sub insert_one {
-    my ($table_name, $item) = @_;
+    my ($dbh, $table_name, $item) = @_;
 
     my @fields = grep {defined $item->{$_}} keys %$item;
 
@@ -106,8 +108,10 @@ sub insert_one {
     my $query = qq!INSERT INTO $table_name ($fields_list) VALUES ($placeholders)!;
     my @bind_values = map {$item->{$_}} @fields;
 
-    #$dbh->do($query, undef, @bind_values);
+    $dbh->do($query, undef, @bind_values);
 }
+
+
 
 
 sub connect_db {
@@ -125,4 +129,6 @@ sub connect_db {
 
     return $dbh;
 }
+
+
 
