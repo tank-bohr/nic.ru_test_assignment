@@ -46,7 +46,7 @@ sub process_string {
     my ($date, $time, $string_without_timestamp) = split ' ', $string, 3;
     my ($int_id, $flag, $address, $other) = split ' ', $string_without_timestamp, 4;
 
-    $flag = '' if $flag !~ qr/(?:<=|=>|->|\*\*\|==)/;
+    $flag = '' if $flag !~ qr/(?:<=|=>|->|\*\*|==)/;
 
     if ($flag eq '<=') {
         my ($id) = $other =~ qr/\sid=(.+)/;
