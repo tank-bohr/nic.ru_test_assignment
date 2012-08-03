@@ -3,6 +3,7 @@
 use DBI;
 use Data::Dumper;
 use FindBin qw/$Bin/;
+use Time::HiRes qw/time/;
 
 use strict;
 use warnings;
@@ -44,25 +45,44 @@ sub process_string {
     my $string = shift;
     my ($date, $time, $string_without_timestamp) = split ' ', $string, 3;
     my ($int_id, $flag, $address, $other) = split ' ', $string_without_timestamp, 4;
-    my $item;
+
+    $flag = '' if $flag !~ qr/(?:<=|=>|->|\*\*\|==)/;
+
     if ($flag eq '<=') {
         my ($id) = $other =~ qr/\sid=(.+)/;
-        $item = {
+        $id ||= time();
+        insert_table('message', {
             created => "$date $time",
             id => $id,
             int_id => $int_id,
             str => $string_without_timestamp
-        };
+        });
     }
     else {
-         $item = {
+         insert_table('log', {
             created => "$date $time",
             int_id => $int_id,
             str => $string_without_timestamp,
             address => $address
-        };
+        });
     }
-    #say Dumper($item);
+
+}
+
+
+
+sub insert_table {
+    my ($table_name, $item) = @_;
+
+    my @fields = grep {defined $item->{$_}} keys %$item;
+
+    my $fields_list = join ', ' => @fields;
+    my $placeholders = join ', ' => map {'?'} 0..$#fields;
+
+    my $query = qq!INSERT INTO $table_name ($fields_list) VALUES ($placeholders)!;
+    my @bind_values = map {$item->{$_}} @fields;
+
+    $dbh->do($query, undef, @bind_values);
 }
 
 
@@ -81,3 +101,4 @@ sub connect_db {
 
     return $dbh;
 }
+
