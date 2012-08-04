@@ -1,4 +1,7 @@
 package DBController;
+use parent qw/Exporter/;
+
+our @EXPORT_OK = qw/dbh/;
 
 use DBI;
 use FindBin qw/$Bin/;
@@ -35,14 +38,21 @@ sub connect_db {
     my $data_source = "DBI:$db_driver:database=$db";
     foreach my $param_name (qw/host port/) {
         my $param_value = $params->{$param_name};
-        $data_source .= ";$param_name=$param_value";
+        $data_source .= ";${param_name}=${param_value}" if ($param_value);
     }
+
+    &logger->debug("[$data_source]");
 
     my ($user, $password) = @{ $params }{ qw/user password/};
     $DatabaseHandleObject = DBI->connect($data_source, $user, $password, {
         RaiseError => 1,
         AutoCommit => 1
     });
+}
+
+
+sub logger {
+    Log::Log4perl->get_logger();
 }
 
 

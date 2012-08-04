@@ -4,7 +4,7 @@ use Data::Dumper;
 use Log::Log4perl;
 use FindBin qw/$Bin/;
 
-use DBController;
+use DBController qw/dbh/;
 
 use strict;
 use warnings;
@@ -13,10 +13,34 @@ sub process_request {
     my $request = shift;
 
     init_logger();
-    &logger->debug('test');
+    &logger->debug('logger works');
 
-    return $request->new_response(200, { 'Content-Type' => 'text/html' }, 'Test');
+    my $data = get_data();
+    my $html = '<pre>'. Dumper($data) .'</pre>';
+
+    return $request->new_response(200, { 'Content-Type' => 'text/html' }, $html);
 }
+
+
+
+
+sub get_data {
+    my $message = &dbh->selectall_arrayref(q!SELECT created, int_id, str, DATE_PART('epoch', created) FROM message LIMIT 100!);
+    my $log     = &dbh->selectall_arrayref(q!SELECT created, int_id, str, DATE_PART('epoch', created) FROM log     LIMIT 100!);
+    my @list;
+    push @list, @$message;
+    push @list, @$log;
+
+    my @sorted = sort {$a->[3] <=> $b->[3]} sort {$a->[1] cmp $b->[1]} @list;
+    my @slice = @sorted[0..99];
+    my $count = &dbh->selectrow_arrayref('SELECT COUNT(*) FROM message');
+
+    return {
+        list => \@slice,
+        count => $count->[0]
+    };
+}
+
 
 
 
