@@ -115,14 +115,13 @@ sub insert_one {
 
 
 sub connect_db {
-    my $db_driver = 'mysql';
-    my $host = 'localhost';
-    my $port = '3306';
-    my $user = 'root';
+    my $db_driver = 'Pg';
+    my $host = 'ubuntu-server';
+    my $user = 'xoma';
     my $db = 'ru_center';
-    my $password = '';
+    my $password = 'secret';
 
-    my $dbh = DBI->connect("DBI:$db_driver:database=$db;host=$host;port=$port", $user, $password, {
+    my $dbh = DBI->connect("DBI:$db_driver:database=$db;host=$host", $user, $password, {
         RaiseError => 1,
         AutoCommit => 1
     });
