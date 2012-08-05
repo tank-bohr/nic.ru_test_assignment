@@ -14,7 +14,7 @@ use warnings;
 use feature qw/say/;
 
 
-my $file_path = "$Bin/out";
+my $file_path = shift || "$Bin/out";
 
 unless (-e $file_path) {
     die 'There is no file to parse';
@@ -72,6 +72,8 @@ sub process_string {
     $flag = '' if $flag !~ qr/(?:<=|=>|->|\*\*|==)/;
     if ($flag eq '<=') {
         my ($id) = $other =~ qr/\sid=(.+)/;
+        # id должен быть уникальным и непустым
+        # если нет id, то положим туда кол-во миллисекунд от начала эпохи.
         $id ||= time();
         return ('message', {
             created => "$date $time",
