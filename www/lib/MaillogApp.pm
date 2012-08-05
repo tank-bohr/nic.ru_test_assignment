@@ -4,7 +4,6 @@ use Data::Dumper;
 use Log::Log4perl;
 use FindBin qw/$Bin/;
 use Text::Haml;
-use Try::Tiny;
 
 use DBController qw/dbh/;
 
@@ -17,18 +16,16 @@ sub process_request {
     init_logger();
     &logger->debug('logger works');
 
-    my $data = get_data();
-    
-    try {
-        my $haml_engine = Text::Haml->new();
-        my $html = $haml_engine->render(&template, %$data, title => 'Список записей');
-        return $request->new_response(200, { 'Content-Type' => 'text/html' }, $html);
+    if ($request->method() eq 'POST') {
+        my $prm = $request->body_parameters();
+        my $address = $prm->{address};
+        &logger->info("address is [$address]");
     }
-    catch {
-        my $error = shift;
-        &logger->error($error);
-        return $request->new_response(500);
-    }
+
+    my $data = get_data();    
+    my $haml_engine = Text::Haml->new();
+    my $html = $haml_engine->render(&template, %$data, title => 'Список записей');
+    return $request->new_response(200, { 'Content-Type' => 'text/html' }, $html);
 }
 
 

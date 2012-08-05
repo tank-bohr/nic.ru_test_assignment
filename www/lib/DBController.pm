@@ -40,8 +40,7 @@ sub connect_db {
         $data_source .= ";${param_name}=${param_value}" if ($param_value);
     }
 
-    &logger->debug("[$data_source]");
-
+    &logger->info("Connect to database [$data_source]");
     my ($user, $password) = @{ $params }{ qw/user password/};
     $DatabaseHandleObject = DBI->connect($data_source, $user, $password, {
         RaiseError => 1,
@@ -52,9 +51,7 @@ sub connect_db {
 
 
 sub load_params_from_config {
-    my $config_file_path = "$Bin/config/db.yml";
-    my $params = YAML::Any::LoadFile($config_file_path);
-    return $params;
+    YAML::Any::LoadFile("$Bin/config/db.yml");
 }
 
 
