@@ -32,18 +32,17 @@ sub process_request {
 
 
 sub get_data {
-    my $message = &dbh->selectall_arrayref(q!SELECT created, int_id, str, DATE_PART('epoch', created) FROM message LIMIT 100!);
-    my $log     = &dbh->selectall_arrayref(q!SELECT created, int_id, str, DATE_PART('epoch', created) FROM log     LIMIT 100!);
-    my @list;
-    push @list, @$message;
-    push @list, @$log;
-
-    my @sorted = sort {$a->[3] <=> $b->[3]} sort {$a->[1] cmp $b->[1]} @list;
-    my @slice = @sorted[0..99];
+    my $list  = &dbh->selectall_arrayref(q!
+        (SELECT created, int_id, str FROM message)
+        UNION ALL
+        (SELECT created, int_id, str FROM log)
+        ORDER BY int_id, created
+        LIMIT 100
+    !);
     my $count = &dbh->selectrow_arrayref('SELECT (SELECT COUNT(*) FROM message) + (SELECT COUNT(*) FROM log)');
 
     return {
-        list => \@slice,
+        list  => $list,
         count => $count->[0]
     };
 }
