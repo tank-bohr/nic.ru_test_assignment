@@ -132,10 +132,10 @@ sub batch_insert {
 
 sub connect_db {
     my $db_driver = 'Pg';
-    my $host = 'ubuntu-server';
-    my $user = 'xoma';
+    my $host = 'localhost';
+    my $user = 'postgres';
     my $db = 'ru_center';
-    my $password = 'secret';
+    my $password = '';
 
     my $dbh = DBI->connect("DBI:$db_driver:database=$db;host=$host", $user, $password, {
         RaiseError => 1,

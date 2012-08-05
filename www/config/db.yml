@@ -1,5 +1,5 @@
 driver: Pg
-host: ubuntu-server
+host: localhost
 db: ru_center
-user: xoma
-password: secret
+user: postgres
+password: ''
