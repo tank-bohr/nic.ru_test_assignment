@@ -1,0 +1,5 @@
+driver: Pg
+host: ubuntu-server
+db: ru_center
+user: xoma
+password: secret

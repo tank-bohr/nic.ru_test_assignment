@@ -3,8 +3,10 @@ use parent qw/Exporter/;
 
 our @EXPORT_OK = qw/dbh/;
 
+use Data::Dumper;
 use DBI;
 use FindBin qw/$Bin/;
+use YAML::Any;
 
 use strict;
 use warnings;
@@ -16,7 +18,8 @@ sub dbh {
         connect_db();
     }
     unless ($DatabaseHandleObject->ping()) {
-        # TODO: reconnect
+        # reconnect
+        connect_db();
     }
 
     return $DatabaseHandleObject;
@@ -24,13 +27,9 @@ sub dbh {
 
 
 sub connect_db {
-    my $params = {
-        driver => 'Pg',
-        host => 'ubuntu-server',
-        user => 'xoma',
-        db => 'ru_center',
-        password => 'secret'
-    };
+    my $params = shift;
+    $params ||= load_params_from_config();
+
     my ($db_driver, $db) = @{ $params }{ qw/driver db/};
     unless ($db_driver && $db) {
         # TODO: do smth
@@ -48,6 +47,14 @@ sub connect_db {
         RaiseError => 1,
         AutoCommit => 1
     });
+}
+
+
+
+sub load_params_from_config {
+    my $config_file_path = "$Bin/config/db.yml";
+    my $params = YAML::Any::LoadFile($config_file_path);
+    return $params;
 }
 
 
